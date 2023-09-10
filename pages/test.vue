@@ -2,87 +2,130 @@
   <div>
     <fieldset>
       <div>
-        <input type="radio" id="Up" v-model="moveDir" :value="MoveDir.UP" />
+        <input
+          id="rCount"
+          v-model="rCount"
+          type="number"
+        >
+        <label for="rCount">Rows</label>
+      </div>
+      <div>
+        <input
+          id="cCount"
+          v-model="cCount"
+          type="number"
+        >
+        <label for="cCount">Columns</label>
+      </div>
+      <div>
+        <input
+          id="Up"
+          v-model="moveDir"
+          type="radio"
+          :value="MoveDir.UP"
+        >
         <label for="Up">Up</label>
       </div>
       <div>
-        <input type="radio" id="Right" v-model="moveDir" :value="MoveDir.RIGHT" />
+        <input
+          id="Right"
+          v-model="moveDir"
+          type="radio"
+          :value="MoveDir.RIGHT"
+        >
         <label for="Right">Right</label>
       </div>
       <div>
-        <input type="radio" id="Down" v-model="moveDir" :value="MoveDir.DOWN" />
+        <input
+          id="Down"
+          v-model="moveDir"
+          type="radio"
+          :value="MoveDir.DOWN"
+        >
         <label for="Down">Down</label>
       </div>
       <div>
-        <input type="radio" id="Left" v-model="moveDir" :value="MoveDir.LEFT" />
+        <input
+          id="Left"
+          v-model="moveDir"
+          type="radio"
+          :value="MoveDir.LEFT"
+        >
         <label for="Left">Left</label>
+      </div>
+      <div>
+        <input
+          id="moveAll"
+          v-model="moveAll"
+          type="checkbox"
+        >
+        <label for="moveAll">Whole row/col</label>
+      </div>
+      <div>
+        <label>Next:</label>
+        <cell
+          :color="nextColor"
+          class="w-10 h-10 align-middle"
+        />
       </div>
     </fieldset>
 
     <div>
       <board
         :board="gameBoard.cells.value"
-        @select-cell="moveCell"
+        @select-cell="moveAll ? moveRowCol($event) : moveCell($event)"
         @animation-finish="resetCell"
-        />
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import _ from 'lodash'
-import _throttle from 'lodash/throttle'
-import { CellColor, MoveDir } from '~/types';
-import {GameLogic} from '~/util/GameLogic'
+import { CellLoc, MoveDir } from '~/types'
+import { GameLogic } from '~/util/GameLogic'
 
-const moveDir = ref(MoveDir.UP)
+const moveDir = ref(MoveDir.DOWN)
+const moveAll = ref(false)
+const rCount = ref(4)
+const cCount = ref(4)
+const nextColor = ref(GameLogic.generateColor())
 
-const gameBoard = new GameLogic();
-gameBoard.init(4, 4);
+const gameBoard = new GameLogic()
 
-let nextCell = GameLogic.generateCell()
+watch([rCount, cCount], () => {
+  gameBoard.init(unref(rCount), unref(cCount))
+}, {
+  immediate: true
+})
 
-const moveCell = (rIndex: number, cIndex: number) => {
-  let dirR = 0, dirC = 0
-  let last = null
+const moveRowCol = ({ row, col }: CellLoc) => {
+  const dir = unref(moveDir)
+  const cells = []
 
-  switch(unref(moveDir)) {
-    case MoveDir.UP: {
-      dirR = 1
-      last = unref(gameBoard.cells).at(-1)![cIndex]
-      break;
-    }
-    case MoveDir.DOWN: {
-      dirR = -1
-      last = unref(gameBoard.cells)[0][cIndex]
-      break;
-    }
-    case MoveDir.LEFT: {
-      dirC = 1
-      last = unref(gameBoard.cells)[rIndex].at(-1)!
-      break
-    }
-    case MoveDir.RIGHT: {
-      dirC = -1
-      last = unref(gameBoard.cells)[rIndex][0]
-      break
-    }
+  gameBoard.clearCell(gameBoard.getLast({ row, col }, dir))
+
+  if ([MoveDir.DOWN, MoveDir.UP].includes(dir)) {
+    for (let i = 0; i < gameBoard.rows; i++) { cells.push({ row: i, col }) }
+  } else {
+    for (let i = 0; i < gameBoard.cols; i++) { cells.push({ row, col: i }) }
   }
 
-  for(let i = 0; unref(gameBoard.cells)[rIndex + (i+1)*dirR]?.[cIndex + (i+1)*dirC] != undefined; i++) {
-    gameBoard.moveCell(rIndex + i*dirR, cIndex + i*dirC, unref(moveDir))
-  }
+  for (const cell of cells) { gameBoard.moveCell(cell, dir, unref(nextColor)) }
 
-  // last!.move = {
-  //   color:  nextCell.color,
-  //   dir: unref(moveDir)
-  // }
-  // nextCell = GameLogic.generateCell()
+  nextColor.value = GameLogic.generateColor()
 }
 
-const resetCell = (rIndex: number, cIndex: number) => {
-  debugger
-  unref(gameBoard.cells)[rIndex][cIndex].color = unref(gameBoard.cells)[rIndex][cIndex].move.color
-  unref(gameBoard.cells)[rIndex][cIndex].move = null
+const moveCell = (loc: CellLoc) => {
+  const dir = unref(moveDir)
+
+  gameBoard.clearCell(loc)
+
+  gameBoard.moveCell(loc, dir, unref(nextColor))
+
+  if (!gameBoard.inBounds(GameLogic.getNextLoc(loc, dir))) { nextColor.value = GameLogic.generateColor() }
+}
+
+const resetCell = (loc: CellLoc) => {
+  gameBoard.finishMove(loc)
 }
 </script>

@@ -23,3 +23,8 @@ export type CellState = {
         color: CellColor
     } | null
 }
+
+export type CellLoc = {
+    row: number,
+    col: number
+}

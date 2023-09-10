@@ -6,8 +6,8 @@ export default defineNuxtConfig({
   postcss: {
     plugins: {
       tailwindcss: {},
-      autoprefixer: {},
-    },
+      autoprefixer: {}
+    }
   },
   app: {
     baseURL: '/shushi/' // process.env.NUXT_APP_BASE_URL || '/'

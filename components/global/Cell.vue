@@ -1,29 +1,4 @@
 <template>
-  <!-- <div
-    class="
-      w-20 h-20 inline-block m-0.5 relative
-      cell
-    "
-    :class="{
-      animate: !!props.move?.dir,
-      [props.move?.dir]: true
-    }"
-    @transitionend="move.color && emit('animation-finish')"
-    >
-    <div
-      class="
-        w-full h-full
-        hover:shadow-2xl hover:scale-105
-        [&.selected]:shadow-2xl [&.selected]:scale-105
-      "
-      :class="tmpClasses"
-    />
-    <div
-      v-if="!!props.move"
-      class="w-20 h-20 absolute inner top-0 left-0"
-      :class="colorMap[props.move.color]"
-    />
-  </div> -->
   <div
     class="
       w-20 h-20 inline-block m-0.5 relative
@@ -33,36 +8,39 @@
       animate: !!move,
       [move?.dir]: true
     }"
-    @transitionend="!!move && emit('animation-finish')"
+    @animationend="!!move && emit('animation-finish')"
   >
-  <div
+    <div
       class="
         w-full h-full
         hover:shadow-2xl hover:scale-105
         [&.selected]:shadow-2xl [&.selected]:scale-105
       "
-      :class="colorMap[color]"
+      :class="cellColor"
     />
 
     <div
-      v-if="!!move"
       class="w-20 h-20 absolute inner top-0 left-0"
-      :class="colorMap[move.color]"
+      :class="innerClass"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import {CellColor, CellState, MoveDir} from '~/types'
+import { mergeProps } from 'nuxt/dist/app/compat/capi';
+import {CellColor, MoveDir} from '~/types'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     color: CellColor,
-    selected: boolean,
-    move: {
+    selected?: boolean,
+    move?: {
         dir: MoveDir,
         color: CellColor
     } | null
-}>()
+}>(), {
+  selected: false,
+  move: null
+})
 
 const emit = defineEmits<{
   (e: 'animation-finish'): void
@@ -77,32 +55,75 @@ const colorMap = markRaw({
     [CellColor.EMPTY]: 'bg-zinc-800',
 })
 
-// const tmpClasses = computed(() => (
-//     [
-//       colorMap[props.color],
-//       props.selected ? 'selected' : ''
-//     ].join(' ')
-// ))
+const cellColor = computed(() => {
+  return (props.move && props.color != CellColor.EMPTY) ? '' : colorMap[props.color]
+})
+
+const innerClass = computed(() => {
+  return {
+    hidden: !props.move,
+    [colorMap[props.move?.color]]: true
+  }
+})
 </script>
 
 <style scoped>
-.cell.animate {
-  transition: translate 1s ease;
+.cell.animate .inner {
+  animation-duration: 0.5s;
+  animation-timing-function: linear;
+  z-index: 100;
 }
 
-.cell.right {
-  translate: calc(100% + 0.25rem);
+.cell.down .inner {
+  animation-name: moveDown;
 }
-
-.cell.right .inner {
-  translate: calc(-100% - 0.25rem);
-}
-
-.cell.up {
-  translate: 0 calc(-100% - 0.25rem);
-}
-
 .cell.up .inner {
-  translate: 0 calc(100% + 0.25rem);
+  animation-name: moveUp;
+}
+.cell.right .inner {
+  animation-name: moveRight;
+}
+.cell.left .inner {
+  animation-name: moveLeft;
+}
+
+@keyframes moveDown {
+  from {
+    translate: 0 calc(-100% - 0.25rem);
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes moveUp {
+  from {
+    translate: 0 calc(100% + 0.25rem);
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes moveRight {
+  from {
+    translate: calc(-100% - 0.25rem) 0;
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes moveLeft {
+  from {
+    translate: calc(100% + 0.25rem) 0;
+  }
+
+  to {
+    translate: 0 0;
+  }
 }
 </style>

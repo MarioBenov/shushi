@@ -1,37 +1,37 @@
 <template>
   <div class="">
-      <div
-          v-for="(row, rIndex) in board"
-          :key="`row-${rIndex}`"
-          class="flex"
-      >
-          <cell
-              v-for="(cell, cIndex) in row"
-              v-bind="cell"
-              @click="emit('select-cell', rIndex, cIndex)"
-              @animation-finish="emit('animation-finish', rIndex, cIndex)"
-              />
-              <!-- :key="`${rIndex}-${cIndex}`"
+    <div
+      v-for="(row, rIndex) in board"
+      :key="`row-${rIndex}`"
+      class="flex"
+    >
+      <cell
+        v-for="(cell, cIndex) in row"
+        v-bind="cell"
+        @click="emit('select-cell', {row: rIndex, col: cIndex})"
+        @animation-finish="emit('animation-finish', {row: rIndex, col: cIndex})"
+      />
+      <!-- :key="`${rIndex}-${cIndex}`"
               :color="cell.color"
               :selected="_isMatch(selectedCells[0], [rIndex, cIndex])"
               :row="rIndex"
               :col="cIndex" -->
-      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import _isMatch from 'lodash/isMatch'
 import _ from 'lodash'
-import {CellColor} from '~/types'
+import type {CellLoc, CellState} from '~/types'
 
 const props = defineProps<{
-  board: any[][]
+  board: CellState[][]
 }>()
 
 const emit = defineEmits<{
-  (e: 'select-cell', rIndex: number, cIndex: number): void
-  (e: 'animation-finish', rIndex: number, cIndex: number): void
+  (e: 'select-cell', loc: CellLoc): void
+  (e: 'animation-finish', loc: CellLoc): void
 }>()
 
 // let selectedCells = ref<[number, number][]>([])
