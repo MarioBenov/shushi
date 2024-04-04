@@ -1,13 +1,13 @@
 <template>
   <div
     class="
-      w-20 h-20 inline-block m-0.5 relative
+      aspect-square
+      block  relative
       cell
+      flex-grow
+      m-0.5
     "
-    :class="{
-      animate: !!move,
-      [move?.dir]: true
-    }"
+    :class="cellClass"
     @animationend="!!move && emit('animation-finish')"
   >
     <div
@@ -15,19 +15,22 @@
         w-full h-full
         hover:shadow-2xl hover:scale-105
         [&.selected]:shadow-2xl [&.selected]:scale-105
+        box-border border-2 border-solid border-slate-100 rounded-md
       "
       :class="cellColor"
     />
 
     <div
-      class="w-20 h-20 absolute inner top-0 left-0"
+      class="
+        absolute inner top-0 left-0 w-full h-full
+        box-border border-2 border-solid border-slate-100 rounded-md
+      "
       :class="innerClass"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { mergeProps } from 'nuxt/dist/app/compat/capi';
 import {CellColor, MoveDir} from '~/types'
 
 const props = withDefaults(defineProps<{
@@ -36,10 +39,12 @@ const props = withDefaults(defineProps<{
     move?: {
         dir: MoveDir,
         color: CellColor
-    } | null
+    } | null,
+    hide?: boolean
 }>(), {
   selected: false,
-  move: null
+  move: null,
+  hide: false
 })
 
 const emit = defineEmits<{
@@ -56,12 +61,31 @@ const colorMap = markRaw({
 })
 
 const cellColor = computed(() => {
-  return (props.move && props.color != CellColor.EMPTY) ? '' : colorMap[props.color]
+  return {
+    [colorMap[props.color]]: true,
+    selected: props.selected,
+    invisible: props.hide
+  }
+  // return (props.move && props.color != CellColor.EMPTY) ? '' : colorMap[props.color]
+})
+
+const cellAnimationTime = ref('.25s')
+
+const cellClass = computed(() => {
+  if(!props.move) return {}
+
+  return {
+    animate: true,
+    [props.move?.dir]: true
+  }
 })
 
 const innerClass = computed(() => {
+  if(!props.move) return {
+    hidden: true
+  }
+
   return {
-    hidden: !props.move,
     [colorMap[props.move?.color]]: true
   }
 })
@@ -69,8 +93,8 @@ const innerClass = computed(() => {
 
 <style scoped>
 .cell.animate .inner {
-  animation-duration: 0.5s;
-  animation-timing-function: linear;
+  animation-duration: v-bind(cellAnimationTime);
+  animation-timing-function: ease-in-out;
   z-index: 100;
 }
 

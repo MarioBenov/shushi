@@ -15,16 +15,17 @@ export enum MoveDir {
 }
 
 export type CellState = {
-    color: CellColor,
-    key: string,
-    selected: boolean,
+    color: CellColor
+    key: string
+    selected: boolean
     move: {
-        dir: MoveDir,
+        dir: MoveDir
         color: CellColor
     } | null
+    hide: boolean
 }
 
 export type CellLoc = {
-    row: number,
+    row: number
     col: number
 }

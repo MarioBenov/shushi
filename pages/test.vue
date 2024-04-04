@@ -122,7 +122,9 @@ const moveCell = (loc: CellLoc) => {
 
   gameBoard.moveCell(loc, dir, unref(nextColor))
 
-  if (!gameBoard.inBounds(GameLogic.getNextLoc(loc, dir))) { nextColor.value = GameLogic.generateColor() }
+  if (!gameBoard.inBounds(GameLogic.getNextLoc(loc, dir)))
+    nextColor.value = GameLogic.generateColor()
+
 }
 
 const resetCell = (loc: CellLoc) => {

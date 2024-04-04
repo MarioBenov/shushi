@@ -13,7 +13,8 @@ export class GameLogic {
       color: GameLogic.generateColor(),
       key: _.uniqueId('cell'),
       selected: false,
-      move: null
+      move: null,
+      hide: false
     }
   }
 
@@ -35,17 +36,18 @@ export class GameLogic {
   }
 
   public static dirTowards (loc1: CellLoc, loc2: CellLoc): MoveDir | null {
-    if (_.isMatch(loc1, loc2)) { return null }
+    if (_.isMatch(loc1, loc2)) return null
 
     const rowDiff = loc2.row - loc1.row
     const colDiff = loc2.col - loc1.col
 
-    if (rowDiff === 0) {
-      if (colDiff > 0) { return MoveDir.RIGHT } else { return MoveDir.LEFT }
-    }
-    if (colDiff === 0) {
-      if (rowDiff > 0) { return MoveDir.DOWN } else { return MoveDir.UP }
-    }
+    if (rowDiff === 0)
+      if (colDiff > 0) return MoveDir.RIGHT
+      else return MoveDir.LEFT
+
+    if (colDiff === 0)
+      if (rowDiff > 0) return MoveDir.DOWN
+      else return MoveDir.UP
 
     return null
   }
@@ -94,6 +96,8 @@ export class GameLogic {
 
   public cells = ref<CellState[][]>([])
 
+  private nextColor = GameLogic.generateColor()
+
   public init (rows: number, cols: number) : void {
     this.rows = rows
     this.cols = cols
@@ -108,20 +112,26 @@ export class GameLogic {
   public moveCell (
     loc: CellLoc,
     dir: MoveDir,
-    nextColor?: CellColor
   ) {
     const nextCell: CellLoc = GameLogic.getNextLoc(loc, dir)
+    let nextColor = this.nextColor
 
     if (!this.inBounds(nextCell)) {
-      nextColor = nextColor ?? CellColor.EMPTY
+      this.nextColor = GameLogic.generateColor()
     } else {
       nextColor = unref(this.cells)[nextCell.row][nextCell.col].color
     }
 
-    unref(this.cells)[loc.row][loc.col].move = {
+    const cell = unref(this.cells)[loc.row][loc.col]
+    cell.move = {
       dir,
       color: nextColor
     }
+    cell.hide = true
+  }
+
+  public getCell({row, col}: CellLoc) : CellState {
+    return this.cells.value[row][col]
   }
 
   public finishMove ({ row, col }: CellLoc) {
@@ -136,6 +146,7 @@ export class GameLogic {
 
     cell.color = cell.move?.color ?? CellColor.EMPTY
     cell.move = null
+    cell.hide = false
   }
 
   public clearCell ({ row, col }: CellLoc) {
@@ -143,6 +154,28 @@ export class GameLogic {
   }
 
   public evaluateLines ({ row, col }: CellLoc) {
-    return [{ row, col }]
+    const cells = unref(this.cells)
+    const color = this.getCell({row, col}).color
+
+    let rm = row
+    let rM = row
+    let cm = col
+    let cM = col
+
+    while(rm > 0 && cells[rm - 1][col].color === color) rm--;
+    while(rM < this.rows - 1 && cells[rM + 1][col].color === color) rM++;
+    while(cm > 0 && cells[row][cm - 1].color === color) cm--;
+    while(cM < this.cols - 1 && cells[row][cM + 1].color === color) cM++;
+
+    return [
+      ...rM - rm >= 2 ? _.range(rm, rM + 1).map((row) => ({row, col})) : [],
+      ...cM - cm >= 2 ? _.range(cm, cM + 1).map((col) => ({row, col})) : []
+    ]
+  }
+
+  public selectCell({row, col}: CellLoc, selected = true): void {
+    const cells = unref(this.cells)
+
+    cells[row][col].selected = selected
   }
 }
